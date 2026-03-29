@@ -129,33 +129,6 @@ mvn spring-boot:run
 
 App runs at → **http://localhost:8080**
 
----
-
-## ⚙️ Enabling Method Security
-
-Method security is **not enabled by default**. You must add `@EnableMethodSecurity` to your config:
-
-```java
-@Configuration
-@EnableWebSecurity
-@EnableMethodSecurity(
-    prePostEnabled = true,   // Enables @PreAuthorize and @PostAuthorize (default: true)
-    securedEnabled = true,   // Enables @Secured
-    jsr250Enabled = true     // Enables @RolesAllowed (JSR-250)
-)
-public class SecurityConfig {
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().authenticated()
-            )
-            .httpBasic(Customizer.withDefaults());
-        return http.build();
-    }
-}
-```
 
 ---
 
@@ -168,66 +141,6 @@ public class SecurityConfig {
 | `@Secured` | Before method | ❌ | Simple — only accepts role strings |
 | `@RolesAllowed` | Before method | ❌ | JSR-250 standard — same as `@Secured` |
 
----
-
-## 💻 Code Examples
-
-### `@PreAuthorize` — Pre-invocation check
-
-```java
-@Service
-public class ResourceService {
-
-    // Only ADMIN can delete
-    @PreAuthorize("hasRole('ADMIN')")
-    public void deleteResource(Long id) {
-        // ...
-    }
-
-    // USER or ADMIN can view
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public Resource getResource(Long id) {
-        // ...
-    }
-
-    // User can only access their own data
-    @PreAuthorize("authentication.name == #username")
-    public UserProfile getProfile(String username) {
-        // ...
-    }
-
-    // Combine multiple conditions with SpEL
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #resource.owner == authentication.name)")
-    public Resource updateResource(Resource resource) {
-        // ...
-    }
-}
-```
-
-### `@PostAuthorize` — Post-invocation check
-
-```java
-// Only return the object if the current user owns it
-@PostAuthorize("returnObject.owner == authentication.name")
-public Document getDocument(Long id) {
-    return documentRepository.findById(id).orElseThrow();
-    // Method runs, but result is blocked if the user doesn't own it
-}
-```
-
-### `@Secured` — Simple role check
-
-```java
-@Secured("ROLE_ADMIN")   // Note: must include ROLE_ prefix
-public void adminOperation() {
-    // ...
-}
-
-@Secured({"ROLE_USER", "ROLE_ADMIN"})  // Multiple roles = OR condition
-public void userOrAdminOperation() {
-    // ...
-}
-```
 
 ---
 
@@ -243,43 +156,6 @@ public void userOrAdminOperation() {
 | Best for | Coarse-grained access | Fine-grained, domain-level access |
 
 > 💡 **Best practice:** Use URL security for broad access control + method security for fine-grained domain rules. Use both together.
-
----
-
-## 🧪 Running Tests
-
-```bash
-mvn test
-```
-
-```java
-@SpringBootTest
-class ResourceServiceTest {
-
-    @Autowired
-    private ResourceService resourceService;
-
-    @Test
-    @WithMockUser(roles = "USER")
-    void userCannotDeleteResource() {
-        assertThrows(AccessDeniedException.class,
-            () -> resourceService.deleteResource(1L));
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void adminCanDeleteResource() {
-        assertDoesNotThrow(() -> resourceService.deleteResource(1L));
-    }
-
-    @Test
-    @WithMockUser(username = "alice")
-    void userCanOnlyAccessOwnProfile() {
-        assertThrows(AccessDeniedException.class,
-            () -> resourceService.getProfile("bob"));
-    }
-}
-```
 
 ---
 
