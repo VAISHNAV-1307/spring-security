@@ -1,0 +1,3 @@
+spring:
+  application:
+    name: SpringSecurityEx-2.1
