@@ -284,24 +284,6 @@ class SpringSecurityEx1ApplicationTests {
 
 ---
 
-## ➡️ Next Steps
-
-Once you're comfortable with the defaults, explore the next branch:
-
-```bash
-git checkout example1.2   # Custom SecurityConfig, custom login page
-```
-
-Or browse the [full branch index](https://github.com/VAISHNAV-1307/spring-security/tree/main#-branch-index).
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! See the [main README](https://github.com/VAISHNAV-1307/spring-security/tree/main) for guidelines.
-
----
-
 <p align="center">
   ⬅️ <a href="https://github.com/VAISHNAV-1307/spring-security/tree/main">Back to Main</a> &nbsp;|&nbsp;
   Made with ❤️ by <a href="https://github.com/VAISHNAV-1307">VAISHNAV-1307</a>
