@@ -132,81 +132,6 @@ App runs at → **http://localhost:8080**
 
 ---
 
-## 🔒 Security Configuration
-
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/css/**", "/js/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                .loginPage("/login")                          // Custom login page URL
-                .loginProcessingUrl("/login")                 // Form action POST URL
-                .defaultSuccessUrl("/home", true)             // Redirect after login
-                .failureUrl("/login?error=true")              // Redirect on failure
-                .usernameParameter("username")                // Form field names
-                .passwordParameter("password")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutUrl("/do-logout")                      // Custom logout URL
-                .logoutSuccessUrl("/login?logout=true")       // Redirect after logout
-                .invalidateHttpSession(true)                  // Kill session
-                .deleteCookies("JSESSIONID")                  // Clear session cookie
-                .clearAuthentication(true)                    // Clear security context
-                .permitAll()
-            )
-            .rememberMe(remember -> remember
-                .key("uniqueRememberMeKey")
-                .tokenValiditySeconds(86400)                  // 1 day
-            );
-
-        return http.build();
-    }
-}
-```
-
----
-
-## 📄 Custom Login Page
-
-```html
-<!-- login.html -->
-<!DOCTYPE html>
-<html>
-<body>
-  <h2>Login</h2>
-
-  <!-- Error message -->
-  <div th:if="${param.error}" style="color:red">
-    Invalid username or password.
-  </div>
-
-  <!-- Logout message -->
-  <div th:if="${param.logout}" style="color:green">
-    You have been logged out.
-  </div>
-
-  <form method="post" action="/login">
-    <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
-    <label>Username: <input type="text" name="username"/></label><br/>
-    <label>Password: <input type="password" name="password"/></label><br/>
-    <label><input type="checkbox" name="remember-me"/> Remember me</label><br/>
-    <button type="submit">Login</button>
-  </form>
-</body>
-</html>
-```
-
----
-
 ## 🔓 Logout Configuration
 
 | Config Option | Value | Effect |
@@ -230,30 +155,6 @@ public class SecurityConfig {
 | GET | `/login?logout=true` | None | Post-logout landing |
 | GET | `/login?error=true` | None | Login error page |
 
----
-
-## 🧪 Running Tests
-
-```bash
-mvn test
-```
-
-```java
-@Test
-void unauthenticatedUserIsRedirectedToCustomLoginPage() throws Exception {
-    mockMvc.perform(get("/home"))
-           .andExpect(status().is3xxRedirection())
-           .andExpect(redirectedUrlPattern("**/login"));
-}
-
-@Test
-@WithMockUser
-void logoutClearsSessionAndRedirects() throws Exception {
-    mockMvc.perform(post("/do-logout").with(csrf()))
-           .andExpect(status().is3xxRedirection())
-           .andExpect(redirectedUrl("/login?logout=true"));
-}
-```
 
 ---
 
