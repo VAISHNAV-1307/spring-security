@@ -129,45 +129,6 @@ App runs at → **http://localhost:8080**
 
 ---
 
-## 🔒 Security Configuration
-
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())              // Disable CSRF for REST APIs
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/public/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
-                .anyRequest().authenticated()
-            )
-            .httpBasic(Customizer.withDefaults());     // Enable HTTP Basic Auth
-        return http.build();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        UserDetails user = User.builder()
-            .username("user").password(encoder.encode("password")).roles("USER").build();
-        UserDetails admin = User.builder()
-            .username("admin").password(encoder.encode("admin123")).roles("ADMIN").build();
-        return new InMemoryUserDetailsManager(user, admin);
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-}
-```
-
----
-
 ## ⚖️ HTTP Basic Auth vs Form Login
 
 | Aspect | Form Login | HTTP Basic Auth |
@@ -209,29 +170,6 @@ curl -u user:password http://localhost:8080/admin/users
 
 # No credentials → 401 Unauthorized
 curl http://localhost:8080/user/info
-```
-
----
-
-## 🧪 Running Tests
-
-```bash
-mvn test
-```
-
-```java
-@Test
-void noCredentialsShouldReturn401() throws Exception {
-    mockMvc.perform(get("/user/info"))
-           .andExpect(status().isUnauthorized());
-}
-
-@Test
-@WithMockUser(roles = "USER")
-void userRoleCannotAccessAdmin() throws Exception {
-    mockMvc.perform(get("/admin/users"))
-           .andExpect(status().isForbidden());
-}
 ```
 
 ---
