@@ -175,37 +175,6 @@ eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIiwicm9sZXMiOlsiUk9MRV9VU0VSIl19.abc123
 
 ---
 
-## 🔒 Security Configuration
-
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-
-    @Autowired
-    private JwtAuthenticationFilter jwtFilter;
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // No sessions
-            )
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()     // Login endpoint is public
-                .anyRequest().authenticated()
-            )
-            // Add JWT filter before Spring's username/password filter
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
-    }
-}
-```
-
----
-
 ## 🔄 Authentication Flow
 
 ```
@@ -225,41 +194,6 @@ Client                          Server
   │                               │  Extracts user + roles
   │                               │  Sets SecurityContext
   │  200 OK { data }         ◀─── │  Controller processes request
-```
-
----
-
-## 🔑 JWT Filter (`JwtAuthenticationFilter`)
-
-```java
-@Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
-
-        String authHeader = request.getHeader("Authorization");
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-
-            // Validate token and extract username
-            // (Full implementation in jwt2 with jjwt library)
-            String username = validateAndExtract(token);
-
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(username, null, getAuthorities(token));
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            }
-        }
-
-        filterChain.doFilter(request, response);
-    }
-}
 ```
 
 ---
@@ -286,31 +220,6 @@ POST /auth/login
 **Authenticated Request:**
 ```bash
 curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..." http://localhost:8080/api/hello
-```
-
----
-
-## 🧪 Running Tests
-
-```bash
-mvn test
-```
-
-```java
-@Test
-void loginWithValidCredentialsShouldReturnToken() throws Exception {
-    mockMvc.perform(post("/auth/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"username\":\"user\",\"password\":\"password\"}"))
-           .andExpect(status().isOk())
-           .andExpect(jsonPath("$.token").exists());
-}
-
-@Test
-void requestWithoutTokenShouldReturn401() throws Exception {
-    mockMvc.perform(get("/api/hello"))
-           .andExpect(status().isUnauthorized());
-}
 ```
 
 ---
