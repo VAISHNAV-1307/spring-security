@@ -127,52 +127,6 @@ App runs at → **http://localhost:8080**
 
 ---
 
-## 🔒 Security Configuration
-
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/public/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
-                .anyRequest().authenticated()
-            )
-            .formLogin(Customizer.withDefaults())
-            .logout(Customizer.withDefaults());
-        return http.build();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        UserDetails user = User.builder()
-            .username("user")
-            .password(encoder.encode("password"))
-            .roles("USER")
-            .build();
-
-        UserDetails admin = User.builder()
-            .username("admin")
-            .password(encoder.encode("admin123"))
-            .roles("ADMIN")
-            .build();
-
-        return new InMemoryUserDetailsManager(user, admin);
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-}
-```
-
----
 
 ## 📡 API Endpoints
 
@@ -184,29 +138,6 @@ public class SecurityConfig {
 | POST | `/login` | All | Login |
 | POST | `/logout` | Authenticated | Logout |
 
----
-
-## 🧪 Running Tests
-
-```bash
-mvn test
-```
-
-```java
-@Test
-@WithMockUser(username = "user", roles = "USER")
-void userCannotAccessAdmin() throws Exception {
-    mockMvc.perform(get("/admin/dashboard"))
-           .andExpect(status().isForbidden());
-}
-
-@Test
-@WithMockUser(username = "admin", roles = "ADMIN")
-void adminCanAccessDashboard() throws Exception {
-    mockMvc.perform(get("/admin/dashboard"))
-           .andExpect(status().isOk());
-}
-```
 
 ---
 
