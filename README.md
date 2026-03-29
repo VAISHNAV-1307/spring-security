@@ -128,46 +128,6 @@ App runs at → **http://localhost:8080**
 
 ---
 
-## 🔒 Security Configuration
-
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            // CSRF: enabled by default for browser apps, disable for stateless REST
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**")    // Disable CSRF for REST API paths
-            )
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/public/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .formLogin(Customizer.withDefaults())
-            // Session Management
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .maximumSessions(1)                          // Only 1 session per user
-                .maxSessionsPreventsLogin(false)             // New login kicks out old session
-            )
-            .sessionManagement(session -> session
-                .sessionFixation().migrateSession()          // Protect against session fixation
-            );
-        return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-}
-```
-
----
-
 ## 🛡️ CSRF Protection Explained
 
 **What is CSRF?**
@@ -208,36 +168,6 @@ Attacker's site → user's browser → POST /transfer?amount=1000 → Your serve
 | POST | `/api/data` | ❌ Skipped | Required | REST API endpoint |
 | POST | `/form/submit` | ✅ Required | Required | Form submission |
 
----
-
-## 🧪 Running Tests
-
-```bash
-mvn test
-```
-
-```java
-@Test
-@WithMockUser
-void postWithoutCsrfToFormEndpointShouldFail() throws Exception {
-    mockMvc.perform(post("/form/submit"))
-           .andExpect(status().isForbidden());
-}
-
-@Test
-@WithMockUser
-void postWithCsrfShouldSucceed() throws Exception {
-    mockMvc.perform(post("/form/submit").with(csrf()))
-           .andExpect(status().isOk());
-}
-
-@Test
-@WithMockUser
-void postToApiWithoutCsrfShouldSucceed() throws Exception {
-    mockMvc.perform(post("/api/data"))
-           .andExpect(status().isOk());
-}
-```
 
 ---
 
